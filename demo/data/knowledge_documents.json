@@ -1,0 +1,32 @@
+[
+  {
+    "id": "doc-001",
+    "title": "NimbusDesk Getting Started Guide",
+    "content": "This guide walks new NimbusDesk administrators through initial setup: creating a workspace, inviting team members, connecting a web chat widget, and configuring your first agent. Most teams complete onboarding in under 30 minutes. After setup, we recommend importing existing FAQs and enabling the RAG-based knowledge search so agents can answer common questions automatically.",
+    "tags": ["onboarding", "setup", "getting-started"]
+  },
+  {
+    "id": "doc-002",
+    "title": "Billing & Subscription Plans",
+    "content": "NimbusDesk bills monthly or annually in advance. Upgrading a plan takes effect immediately with a prorated charge; downgrading takes effect at the next billing cycle. Enterprise customers can request a custom contract with invoicing instead of credit-card billing. All plan changes are logged in the account audit trail.",
+    "tags": ["billing", "plans", "pricing"]
+  },
+  {
+    "id": "doc-003",
+    "title": "Security & Compliance Overview",
+    "content": "NimbusDesk (fictional, for demo purposes) describes a typical SaaS security posture: encryption in transit and at rest, role-based access control, audit logging of administrative actions, and regular third-party penetration testing. Customer data is logically isolated per workspace. No real compliance certifications are claimed by this demo project.",
+    "tags": ["security", "compliance"]
+  },
+  {
+    "id": "doc-004",
+    "title": "API Rate Limits & Quotas",
+    "content": "The NimbusDesk API enforces a default limit of 60 requests per minute per API key, with burst tolerance up to 120 requests. Enterprise plans can request a higher quota. Exceeding the limit returns an HTTP 429 response with a Retry-After header indicating when to resume.",
+    "tags": ["api", "rate-limit", "developer"]
+  },
+  {
+    "id": "doc-005",
+    "title": "Data Export & Retention Policy",
+    "content": "Conversation and customer data is retained for 24 months by default and can be exported at any time as CSV or JSON. Deleted workspaces enter a 30-day recovery window before permanent deletion. Retention windows are configurable on Enterprise plans to meet internal data governance requirements.",
+    "tags": ["data", "retention", "export", "governance"]
+  }
+]

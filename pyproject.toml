@@ -1,0 +1,89 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentic-ai-platform"
+version = "0.1.0"
+description = "Independent, public-safe portfolio implementation of an enterprise conversational agentic AI platform: multi-agent orchestration, RAG/GraphRAG, MCP tool calling, and voice AI."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "Aashu Kumar Jha" }]
+
+dependencies = [
+    "fastapi>=0.141,<1.0",
+    "uvicorn[standard]>=0.52,<1.0",
+    "pydantic>=2.13,<3.0",
+    "pydantic-settings>=2.15,<3.0",
+    "langgraph>=1.2,<2.0",
+    "langchain-core>=1.6,<2.0",
+    "python-dotenv>=1.2,<2.0",
+    "httpx>=0.28,<1.0",
+    "python-multipart>=0.0.9,<1.0",
+    # Local RAG stack (Chroma default vector store, BM25, sentence-transformers for embeddings +
+    # cross-encoder reranking) is in base dependencies, not an optional extra: requirement.md lists
+    # "local vector store" under LOCAL DEFAULTS, not as opt-in, and RAGAgent's default
+    # configuration needs it to boot at all. Unlike the LLM__PROVIDER=mock default (a genuine,
+    # documented substitute for a real model), there is no meaningful "mock" vector search — a
+    # hash-based or random embedding would not actually retrieve anything relevant, so it would be
+    # a fake implementation, not a lighter one. The honest tradeoff: this makes the base install
+    # noticeably heavier (torch + transformers, ~1-2GB) in exchange for real semantic search with
+    # zero API keys and zero external services. `transformers`/`tokenizers`/`accelerate`/`numpy`
+    # are pinned defensively: this repo's dev environment is an Intel Mac where PyPI has no `torch`
+    # wheel newer than 2.2.2, and `transformers>=4.5x` requires `torch>=2.5` (hard failure) while
+    # NumPy 2.x breaks torch 2.2.2's C-extension ABI (`RuntimeError: Numpy is not available`, not
+    # just a warning). Pinning to versions contemporaneous with torch 2.2.x avoids both without
+    # forcing a specific `torch` build — platforms with newer `torch` wheels (Linux, Apple Silicon,
+    # Windows) can relax these pins if desired.
+    "chromadb>=1.5,<2.0",
+    "rank-bm25>=0.2,<1.0",
+    "sentence-transformers>=3.0,<3.1",
+    "transformers>=4.41,<4.42",
+    "tokenizers>=0.19,<0.20",
+    "accelerate>=1.0,<2.0",
+    "huggingface_hub>=0.23,<1.0",
+    "numpy>=1.26,<2.0",
+    "pypdf>=6.0,<7.0",
+]
+
+# Optional extras are added phase-by-phase, only once the adapter that needs them exists and has been
+# checked against the installed SDK. Nothing here is required to run the app, the graph, or the base
+# test suite — see README "Configuration" for what each extra unlocks.
+[project.optional-dependencies]
+openai = ["openai>=2.0,<4.0"]
+anthropic = ["anthropic>=1.0,<2.0"]
+gemini = ["google-genai>=1.0,<3.0"]
+groq = ["groq>=1.0,<2.0"]
+
+# faiss-cpu ships wheels for most platforms, but sometimes only for older versions — if a source
+# build is attempted (SWIG/compiler errors), install explicitly with:
+#   pip install --only-binary=:all: faiss-cpu
+faiss = ["faiss-cpu>=1.8,<1.11"]
+pinecone = ["pinecone>=6.0,<10.0"]
+
+dev = [
+    "pytest>=9.1,<10.0",
+    "pytest-asyncio>=1.4,<2.0",
+    "ruff>=0.16,<1.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+# E501: line length is enforced by the formatter, not the linter.
+# B008: FastAPI's dependency-injection system is built around `Depends(...)` as a parameter
+# default — that's the framework's documented pattern, not the mutable-default-argument bug B008
+# exists to catch.
+ignore = ["E501", "B008"]

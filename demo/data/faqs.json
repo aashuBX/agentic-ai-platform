@@ -1,0 +1,62 @@
+[
+  {
+    "id": "faq-001",
+    "title": "What is NimbusDesk?",
+    "content": "NimbusDesk is a synthetic, fictional customer engagement product used only as demo data for this portfolio project. It represents a typical SaaS helpdesk and CRM platform with chat, voice, and messaging channels.",
+    "tags": ["general", "product"]
+  },
+  {
+    "id": "faq-002",
+    "title": "How do I reset my password?",
+    "content": "Go to Settings > Account > Security and click 'Reset Password'. You'll receive a reset link by email that expires after 30 minutes.",
+    "tags": ["account", "security", "password"]
+  },
+  {
+    "id": "faq-003",
+    "title": "What are your business hours?",
+    "content": "Support is available Monday to Friday, 9am-6pm IST. Enterprise plans include 24/5 support with a 1-hour response SLA.",
+    "tags": ["support", "hours"]
+  },
+  {
+    "id": "faq-004",
+    "title": "What pricing plans are available?",
+    "content": "NimbusDesk offers three plans: Starter (up to 3 seats), Growth (up to 20 seats, includes WhatsApp channel), and Enterprise (unlimited seats, includes GraphRAG knowledge search and dedicated support).",
+    "tags": ["pricing", "plans", "billing"]
+  },
+  {
+    "id": "faq-005",
+    "title": "How do I integrate WhatsApp with NimbusDesk?",
+    "content": "In Settings > Channels > WhatsApp, connect your WhatsApp Business API account and verify the phone number. Growth and Enterprise plans support WhatsApp; Starter does not.",
+    "tags": ["whatsapp", "channels", "integration"]
+  },
+  {
+    "id": "faq-006",
+    "title": "What is your refund policy?",
+    "content": "Monthly plans can be cancelled anytime with no refund for the current billing cycle. Annual plans are refundable on a prorated basis within the first 30 days.",
+    "tags": ["refund", "billing", "policy"]
+  },
+  {
+    "id": "faq-007",
+    "title": "How do I export my data?",
+    "content": "Go to Settings > Data > Export to request a full export of conversations, customers, and leads as a CSV/JSON bundle. Exports are generated asynchronously and emailed within 24 hours.",
+    "tags": ["data", "export"]
+  },
+  {
+    "id": "faq-008",
+    "title": "Is my data encrypted?",
+    "content": "Yes. Data is encrypted in transit with TLS 1.2+ and at rest with AES-256. This is a synthetic policy statement for demo purposes only.",
+    "tags": ["security", "encryption", "compliance"]
+  },
+  {
+    "id": "faq-009",
+    "title": "How do I contact support?",
+    "content": "Use the in-app chat widget, email support@example.com, or ask this assistant to hand you off to a human agent.",
+    "tags": ["support", "contact", "handoff"]
+  },
+  {
+    "id": "faq-010",
+    "title": "Can I add multiple team members?",
+    "content": "Yes, from Settings > Team > Invite Member. Seat limits depend on your plan: Starter (3), Growth (20), Enterprise (unlimited).",
+    "tags": ["team", "seats", "account"]
+  }
+]

@@ -216,3 +216,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- Project-specific (agentic-ai-platform) ---
+# Local runtime artifacts only: root-level SQLite DB + Chroma vector store persistence.
+# Anchored to the repo root (leading slash) so this does NOT match demo/data/, which holds
+# committed synthetic fixtures (faqs.json, knowledge_documents.json).
+/data/
+*.db
+*.sqlite3
