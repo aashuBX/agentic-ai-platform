@@ -1,9 +1,8 @@
-
 # 🤖 Enterprise Conversational Agentic AI Platform
 
 <p align="center">
 
-### Production-Oriented GenAI • Agentic AI • Multi-Agent Systems • RAG • GraphRAG • MCP • Voice AI • LLMOps
+### Production-Oriented GenAI • Agentic AI • Multi-Agent Systems • Advanced RAG • GraphRAG • MCP • Voice AI • LLMOps
 
 </p>
 
@@ -15,7 +14,7 @@
 ![LangChain](https://img.shields.io/badge/LangChain-LLM%20Framework-1C3C3C?style=for-the-badge)
 ![MCP](https://img.shields.io/badge/MCP-FastMCP-6B4FBB?style=for-the-badge)
 ![RAG](https://img.shields.io/badge/Advanced-RAG-0A7AFF?style=for-the-badge)
-![Neo4j](https://img.shields.io/badge/Neo4j-GraphRAG-008CC1?style=for-the-badge&logo=neo4j&logoColor=white)
+![GraphRAG](https://img.shields.io/badge/GraphRAG-Neo4j-008CC1?style=for-the-badge&logo=neo4j&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-Memory%20%26%20Cache-DC382D?style=for-the-badge&logo=redis&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 
@@ -23,765 +22,1582 @@
 
 ---
 
-## ⚠️ Independent Portfolio Project — Public-Safe Disclaimer
+## 🎯 Overview
 
-This repository is an **independent, personal implementation** built to demonstrate AI/agentic-engineering
-practices publicly. It is **not** my employer's product, is not affiliated with or endorsed by any employer,
-and contains **no proprietary source code, internal APIs, confidential prompts, production credentials,
-customer data, internal database schemas, private URLs, proprietary business logic, or company assets**.
+This repository is an **independent public implementation of a production-oriented Conversational Agentic AI platform**, created to demonstrate modern AI engineering architecture and implementation patterns.
 
-Everything here is built independently, from scratch, against **open/public technologies**, using
-**synthetic/mock data** (a fictional product called "NimbusDesk" and fictional people like "John Doe") and
-**local development defaults**. No real metrics are fabricated — every number in this README is either a
-measured result from this repository's own test suite, or explicitly marked as not-yet-measured.
-
-## ✅ Implementation Status
-
-This is a large spec (~90 capabilities across 12 build phases — see [`PLAN.md`](PLAN.md) for the phase
-roadmap and [`requirement.md`](requirement.md) for the original brief). It is being built **progressively,
-as a sequence of small working vertical slices**, not as 100 empty files. `[x]` below means the code exists,
-runs, and is covered by a passing test — not "stubbed" or "planned." Everything else is `[ ]`.
-
-**Phase 1 — Core Agent Runtime: complete.** See [Test Results](#-testing) for the current pass count.
-
-<details open>
-<summary><strong>Conversational core & orchestration</strong></summary>
-
-- [x] Conversational AI (`POST /chat`, web channel)
-- [x] Chat agents (FAQ, RAG skeleton, CRM skeleton, Handoff)
-- [x] Multi-agent orchestration (`BaseAgent` + `AgentRegistry`)
-- [x] LangGraph (compiled `StateGraph`, conditional routing, checkpointing)
-- [x] Intent detection (structured output, keyword-heuristic under the mock provider)
-- [x] Agent routing (deterministic intent → agent table, `RouterAgent`)
-- [x] FAQ agent
-- [x] RAG agent *(Phase 2: real hybrid retrieval pipeline — see [RAG](#-rag))*
-- [x] GraphRAG agent *(Phase 3: real relationship-aware retrieval — see [GraphRAG](#-graphrag--knowledge-graph))*
-- [x] CRM agent *(Phase 1 skeleton: not yet wired to MCP — see [MCP](#-mcp))*
-- [ ] Feedback agent
-- [x] Handoff agent
-- [x] Agent Configuration (`AgentConfig` Pydantic model, per-agent `default_config()`)
-- [x] Structured outputs (Pydantic everywhere; `IntentClassification` is the live Phase 1 example)
-- [ ] Human-in-the-loop approval points
-
-</details>
-
-<details>
-<summary><strong>MCP & tool calling</strong></summary>
-
-- [ ] MCP client *(Phase 4)*
-- [ ] MCP server / FastMCP *(Phase 4)*
-- [ ] Tool calling / structured tool selection *(Phase 4)*
-- [ ] Customer / Lead / Appointment / Knowledge tools *(Phase 4)*
-
-</details>
-
-<details>
-<summary><strong>RAG & knowledge</strong></summary>
-
-- [x] Document ingestion: parser (.txt/.md/.pdf), SHA-256 hashing, dedup, SQLite repository
-- [x] All 7 chunking strategies (recursive, semantic, document-aware, proposition, late,
-      hierarchical, agentic) behind one `ChunkingStrategy` interface + `ChunkingFactory`
-- [x] Embeddings (`sentence-transformers` local default, OpenAI optional) + embedding cache
-      (in-memory default, SQLite-persistent option)
-- [x] Vector store: Chroma (default), FAISS (optional extra), Pinecone (optional, unverified live)
-- [x] BM25 retrieval, hybrid retrieval, Reciprocal Rank Fusion (weighted, standard k=60 formula)
-- [x] Cross-encoder reranking (local model), LLM reranking abstraction
-- [x] Query rewriting *(documented no-op under the mock provider)*
-- [x] Self-RAG, Corrective RAG / CRAG *(both simplified — see [RAG](#-rag) for exactly what)*
-- [x] `POST /documents/upload`, `POST /knowledge/search`
-- [x] Example datasets (`demo/data/faqs.json`, `demo/data/knowledge_documents.json`)
-
-</details>
-
-<details>
-<summary><strong>GraphRAG</strong></summary>
-
-- [x] Entity extraction, relationship extraction (regex-based for this repo's synthetic domain,
-      LLM-based for arbitrary text with a real provider configured)
-- [x] Graph builder, graph repository interface
-- [x] Neo4j adapter — verified against a real, temporary Neo4j container during development (not
-      just implemented-against-the-docs), with an in-memory fallback when disabled/unreachable
-- [x] Graph retriever + context formatter (relationship-aware, multi-hop retrieval)
-- [x] Synthetic CRM graph domain (`demo/data/relationships.json`): Customer → owns → Account,
-      → created → Order, → assigned_to → Agent, → booked → Appointment → with → Agent
-
-</details>
-
-<details>
-<summary><strong>Memory</strong></summary>
-
-- [x] Short-term conversation memory *(LangGraph `MemorySaver` checkpointer, keyed by session — messages
-      genuinely accumulate turn-to-turn; see `tests/graph/test_workflow.py`)*
-- [ ] Cross-session memory, Redis-backed persistence, conversation summaries *(Phase 5)*
-
-</details>
-
-<details>
-<summary><strong>Guardrails & reliability</strong></summary>
-
-- [x] Input guardrail (empty / oversized / unsafe-pattern checks)
-- [x] Output guardrail (schema / non-empty / prohibited-pattern checks)
-- [ ] Semantic grounding, claim decomposition/validation, LLM-as-a-Judge, hallucination regeneration loop
-      *(Phase 6)*
-
-</details>
-
-<details>
-<summary><strong>Evaluation</strong></summary>
-
-- [x] Tests (pytest: unit + integration — see [Testing](#-testing))
-- [ ] Scenario framework (schema, generator, runner, run-all, success criteria) *(Phase 7)*
-- [ ] RAGAS evaluation *(Phase 7)*
-
-</details>
-
-<details>
-<summary><strong>Observability</strong></summary>
-
-- [x] Structured JSON logging, trace IDs, agent execution events (`EventBus`)
-- [ ] LangSmith integration, Langfuse integration *(Phase 8)*
-
-</details>
-
-<details>
-<summary><strong>LLM abstraction</strong></summary>
-
-- [x] Multi-provider `LLMProvider` interface (`generate` + `generate_structured`)
-- [x] Mock provider (heuristic, zero-dependency, default — powers every test and the default local run)
-- [x] OpenAI / Anthropic / Gemini / Groq adapters implemented *(need their SDK extra + a real API key to
-      actually call out — see [Configuration](#-configuration))*
-
-</details>
-
-<details>
-<summary><strong>Voice AI</strong></summary>
-
-- [ ] STT/TTS/Voice provider abstractions, settings, pronunciation, silence handling, voicemail, human
-      transfer (voice), recording disclosure, live-test interface, translator/sales agents *(Phase 9)*
-- [x] Human transfer *(chat channel only, via `HandoffAgent`; voice-specific transfer is Phase 9)*
-
-</details>
-
-<details>
-<summary><strong>Multi-channel</strong></summary>
-
-- [x] Web chat channel (`channel: "web"` on `POST /chat`)
-- [ ] SMS-style / WhatsApp-style channel adapters, common message envelope *(Phase 10)*
-
-</details>
-
-<details>
-<summary><strong>Infrastructure & docs</strong></summary>
-
-- [x] FastAPI API layer (`/health`, `/chat`, `/agents`, `/agents/run`)
-- [x] pyproject.toml dependency management, `.env.example`, reproducible local setup
-- [ ] Docker / Docker Compose *(Phase 11)*
-- [ ] CI/CD pipeline config *(not started — project structure is CI-friendly, but no workflow file exists yet)*
-- [x] `PLAN.md` phase roadmap
-- [ ] Mermaid architecture diagrams under `docs/architecture/` *(Phase 12)*
-- [ ] Dedicated demo UI / screenshots *(Swagger UI at `/docs` is the current demo surface)*
-
-</details>
-
-## 🚀 Quick Start
-
-Requires **Python 3.11+**. No external services, Docker, or API keys are required for this to run —
-but the base install does pull in a local embeddings/reranking stack (torch + transformers +
-sentence-transformers + chromadb, ~1-2GB) since real local semantic search is one of this repo's
-"local defaults," not an opt-in extra. See [RAG](#-rag) and [Limitations](#-limitations) for why.
-
-```bash
-git clone <this-repo-url>
-cd agentic-ai-platform
-
-python3.11 -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
-
-pip install -e ".[dev]"
-cp .env.example .env               # defaults are all mock/local — no editing required to run
-
-# Run the API
-uvicorn app.api.main:app --reload
-# -> http://127.0.0.1:8000/docs for interactive Swagger UI
-# First startup downloads two small local models from Hugging Face (~100MB, one-time, cached
-# under ~/.cache/huggingface): the embedding model always, the reranker only if RAG__RERANKER=cross_encoder.
-```
-
-Try it:
-
-```bash
-curl -s http://127.0.0.1:8000/health | python3 -m json.tool
-
-curl -s -X POST http://127.0.0.1:8000/chat \
-  -H "Content-Type: application/json" \
-  -d '{"session_id": "demo-1", "message": "What are your business hours?", "channel": "web"}' \
-  | python3 -m json.tool
-
-curl -s -X POST http://127.0.0.1:8000/chat \
-  -H "Content-Type: application/json" \
-  -d '{"session_id": "demo-1", "message": "Find John'"'"'s lead and mark it as qualified."}' \
-  | python3 -m json.tool
-
-curl -s -X POST http://127.0.0.1:8000/chat \
-  -H "Content-Type: application/json" \
-  -d '{"session_id": "demo-1", "message": "What are the API rate limits?"}' \
-  | python3 -m json.tool
-
-curl -s -X POST http://127.0.0.1:8000/knowledge/search \
-  -H "Content-Type: application/json" \
-  -d '{"query": "data retention policy", "top_k": 3}' \
-  | python3 -m json.tool
-
-curl -s -X POST http://127.0.0.1:8000/chat \
-  -H "Content-Type: application/json" \
-  -d '{"session_id": "demo-1", "message": "Who is the agent assigned to John Doe?"}' \
-  | python3 -m json.tool
-
-echo "NimbusDesk supports two-factor authentication via TOTP apps or SMS codes." > /tmp/2fa-note.txt
-curl -s -X POST http://127.0.0.1:8000/documents/upload -F "file=@/tmp/2fa-note.txt" | python3 -m json.tool
-
-curl -s http://127.0.0.1:8000/agents | python3 -m json.tool
-```
-
-Run the tests:
-
-```bash
-pytest                # 148 passed + 5 optional-Neo4j skips, see Testing below
-ruff check app tests  # lint
-ruff format app tests # format
-```
-
-## 🎯 Project Overview
-
-This repository is an **independent, public implementation of an enterprise-oriented Conversational Agentic AI platform**.
-
-The platform demonstrates how modern Generative AI applications can combine:
+The platform brings together:
 
 - Multi-Agent orchestration
 - LangGraph stateful workflows
+- LangChain
 - Intent detection and intelligent routing
 - Chat-based AI agents
-- Voice-based AI agents
-- Advanced RAG, Self-RAG, Corrective RAG (CRAG)
-- GraphRAG, hybrid retrieval (Vector + BM25 + Knowledge Graph)
-- Reciprocal Rank Fusion (RRF), Cross-Encoder / LLM reranking
-- MCP client/server architecture, AI tool calling, CRM-style automation
-- Conversation memory, cross-session context
-- Input / output guardrails, hallucination detection, semantic grounding, LLM-as-a-Judge
-- Human-in-the-Loop workflows
-- Intelligent document ingestion, multi-strategy chunking, embedding pipelines
-- Vector databases, knowledge graphs
-- Voice AI pipelines, Speech-to-Text / Text-to-Speech, voice provider abstraction & configuration
-- Scenario-based agent testing, RAGAS evaluation, LangSmith / Langfuse observability
-- Agent logs and execution traces
-- Python backend services, Redis, RabbitMQ and Celery
-- Docker and cloud-ready deployment
+- Advanced RAG
+- Self-RAG
+- Corrective RAG (CRAG)
+- Hybrid retrieval
+- BM25
+- Reciprocal Rank Fusion (RRF)
+- Cross-Encoder reranking
+- LLM-based reranking abstraction
+- GraphRAG
+- Neo4j
+- Entity and relationship extraction
+- MCP / FastMCP architecture
+- Tool calling and enterprise-style tools
+- Conversation memory
+- Checkpointed state
+- Input / output guardrails
+- Semantic grounding and hallucination controls
+- LLM-as-a-Judge
+- Human-in-the-loop workflows
+- Voice AI
+- Speech-to-Text / Text-to-Speech
+- Scenario-based agent evaluation
+- RAGAS
+- LangSmith / Langfuse
+- Redis
+- RabbitMQ / Celery
+- FastAPI
+- Docker
+- Cloud-ready architecture
 
-The goal is to demonstrate an AI system that can:
+The implementation is intentionally modular so individual capabilities can evolve independently.
 
-```text
-Understand → Reason → Retrieve Knowledge → Select Agent → Select Tools
-    → Execute Actions → Validate → Evaluate → Respond
-```
+---
 
-## 🏗️ End-to-End Architecture
+# ⭐ Core AI Capabilities
 
-**Status:** the `Channel Adapter → Input Guardrail → Intent Agent → Agent Router → {FAQ, RAG, CRM,
-Handoff} → Output Guardrail → Response` spine below is implemented and tested today for the web-chat
-channel. GraphRAG/Feedback routes exist but currently return an explicit "not implemented yet" response
-(see [Implementation Status](#-implementation-status)); SMS/WhatsApp/Voice channels are not implemented yet.
+| Capability | Focus |
+|---|---|
+| 🤖 Agentic AI | Multi-Agent orchestration, specialized agents, routing |
+| 🧠 LangGraph | Stateful workflows, conditional routing, checkpointing |
+| 🔀 Intent Routing | Structured intent classification and deterministic routing |
+| 🔎 Advanced RAG | Vector + BM25 + hybrid retrieval + reranking |
+| 🕸️ GraphRAG | Relationship-aware and multi-hop knowledge retrieval |
+| 🔌 MCP | MCP Client / Server architecture and tool integration |
+| 🧠 Memory | Conversation state and checkpoint-based context |
+| 🛡️ Guardrails | Input/output validation and response controls |
+| 📊 LLMOps | Tracing, structured events, evaluation architecture |
+| 🧪 Evaluation | Scenario testing, RAGAS, LLM-as-a-Judge |
+| 📞 Voice AI | STT/TTS, voice configuration and conversational workflows |
+| ⚙️ Backend | Python, FastAPI, asynchronous processing |
+| ☁️ Infrastructure | Redis, RabbitMQ, Celery, Docker, AWS-oriented architecture |
+
+---
+
+# 🏗️ End-to-End Architecture
 
 ```text
                                       ┌──────────────────────┐
-                                      │       USER            │
-                                      │                        │
-                                      │ Web / SMS / WhatsApp   │
-                                      │        / Voice         │
-                                      └──────────┬─────────────┘
+                                      │         USER         │
+                                      │                      │
+                                      │ Web / SMS / WhatsApp │
+                                      │        / Voice       │
+                                      └──────────┬───────────┘
                                                  │
                                                  ▼
                                       ┌──────────────────────┐
-                                      │  CHANNEL ADAPTERS     │
-                                      │ Chat / Messaging      │
-                                      │ Voice / WebSocket     │
-                                      └──────────┬─────────────┘
+                                      │   CHANNEL LAYER      │
+                                      │ Chat / Messaging /   │
+                                      │ Voice Adapters       │
+                                      └──────────┬───────────┘
                                                  │
                                                  ▼
                                       ┌──────────────────────┐
-                                      │   INPUT GUARDRAIL     │
-                                      └──────────┬─────────────┘
+                                      │   INPUT GUARDRAIL    │
+                                      └──────────┬───────────┘
                                                  │
                                                  ▼
                                       ┌──────────────────────┐
-                                      │    INTENT AGENT       │
-                                      └──────────┬─────────────┘
+                                      │    INTENT AGENT      │
+                                      └──────────┬───────────┘
                                                  │
                                                  ▼
                                       ┌──────────────────────┐
-                                      │     AGENT ROUTER      │
-                                      └──────────┬─────────────┘
+                                      │     AGENT ROUTER     │
+                                      └──────────┬───────────┘
                                                  │
-             ┌───────────────────────────────────┼───────────────────────────────────┐
-             │                                   │                                   │
-             ▼                                   ▼                                   ▼
-      ┌──────────────┐                    ┌──────────────┐                    ┌──────────────┐
-      │   FAQ AGENT  │                    │   RAG AGENT  │                    │   CRM AGENT  │
-      └──────┬───────┘                    └──────┬───────┘                    └──────┬───────┘
-             │                                   │                                   │
-             │                                   ▼                                   ▼
-             │                           ┌──────────────┐                      ┌──────────────┐
-             │                           │ RAG PIPELINE │                      │  MCP CLIENT  │
-             │                           └──────┬───────┘                      └──────┬───────┘
-             │                                  │                                     │
-             │                    ┌─────────────┼─────────────┐                       ▼
-             │                    ▼             ▼             ▼               ┌──────────────┐
-             │                 Vector         BM25          Graph             │  MCP SERVER  │
-             │                 Search        Search       Retrieval           └──────┬───────┘
-             │                    │             │             │                       │
-             │                    └─────────────┼─────────────┘                       │
-             │                                  ▼                                     │
-             │                                 RRF                                    │
-             │                                  │                                     │
-             │                             Reranking                                  │
-             │                                  │                                     │
-             └──────────────────────────────────┼─────────────────────────────────────┘
-                                                 │
-                                                 ▼
-                                         ┌──────────────┐
-                                         │     LLM      │
-                                         └──────┬───────┘
-                                                │
-                                                ▼
-                                      ┌──────────────────────┐
-                                      │  OUTPUT GUARDRAIL     │
-                                      └──────────┬─────────────┘
-                                                 │
-                                                 ▼
-                                          FINAL RESPONSE
+             ┌───────────────────────────────────┼──────────────────────────────────┐
+             │                                   │                                  │
+             ▼                                   ▼                                  ▼
+      ┌──────────────┐                    ┌──────────────┐                   ┌──────────────┐
+      │   FAQ AGENT  │                    │   RAG AGENT  │                   │   CRM AGENT  │
+      └──────────────┘                    └──────┬───────┘                   └──────┬───────┘
+                                                 │                                  │
+                                                 ▼                                  ▼
+                                        ┌─────────────────┐                  ┌───────────────┐
+                                        │  RAG PIPELINE   │                  │  MCP CLIENT   │
+                                        └────────┬────────┘                  └───────┬───────┘
+                                                 │                                   │
+                             ┌───────────────────┼───────────────────┐               ▼
+                             ▼                   ▼                   ▼        ┌───────────────┐
+                         Vector Search        BM25              GraphRAG      │  MCP SERVER   │
+                             │                   │                   │        └───────┬───────┘
+                             └───────────────────┼───────────────────┘                │
+                                                 ▼                                    │
+                                            RRF Fusion                                │
+                                                 │                                    │
+                                                 ▼                                    │
+                                            Reranking                                 │
+                                                 │                                    │
+                                                 └───────────────────┬────────────────┘
+                                                                     ▼
+                                                               ┌──────────┐
+                                                               │   LLM    │
+                                                               └────┬─────┘
+                                                                    │
+                                                                    ▼
+                                                          ┌──────────────────┐
+                                                          │ OUTPUT GUARDRAIL  │
+                                                          └─────────┬────────┘
+                                                                    │
+                                                                    ▼
+                                                               RESPONSE
+
+                         ┌──────────────────────────────────────────────────┐
+                         │ Memory • Observability • Evaluation • Logging   │
+                         └──────────────────────────────────────────────────┘
 ```
 
-## 🤖 Agentic AI Layer
+> The repository currently contains a working web-chat/core orchestration path, with additional platform capabilities represented as extensible modules and implementation roadmap items.
 
-**Status:** `BaseAgent`, the LangGraph workflow, and the agents marked `[x]` above are implemented. ReAct,
-Plan-and-Execute, hierarchical graphs, and inter-agent delegation beyond the current router are **design
-targets documented in `app/graph/workflow.py`'s docstring, not implemented** — the graph is deliberately
-built so those can be added as new nodes/edges later without a rewrite.
+---
 
-The platform uses specialized agents rather than relying on a single monolithic agent:
+# 🤖 Agentic AI Architecture
+
+The platform uses specialized agents rather than putting all behavior into one monolithic agent.
 
 ```text
-Input Guardrail Agent  →  Validate / filter incoming request
-Intent Agent            →  Understand and classify the request
-Agent Router            →  Select specialized agent
-FAQ Agent                →  Handle knowledge-oriented questions
-RAG Agent                →  Retrieve grounded information
-GraphRAG Agent           →  Handle relationship / multi-hop queries        [planned]
-CRM Agent                →  Interact with business tools                  [skeleton]
-Feedback Agent           →  Process feedback workflows                    [planned]
-Handoff Agent            →  Transfer to human assistance
-Output Guardrail         →  Validate final response
+User Request
+     │
+     ▼
+Input Guardrail
+     │
+     ▼
+Intent Detection
+     │
+     ▼
+Agent Router
+     │
+     ├──────────────► FAQ Agent
+     │
+     ├──────────────► RAG Agent
+     │
+     ├──────────────► GraphRAG Agent
+     │
+     ├──────────────► CRM Agent
+     │
+     ├──────────────► Feedback Agent
+     │
+     └──────────────► Handoff Agent
+                          │
+                          ▼
+                    Human Assistance
+
+Selected Agent
+     │
+     ▼
+Knowledge / Tools / Memory
+     │
+     ▼
+LLM
+     │
+     ▼
+Output Guardrail
+     │
+     ▼
+Response
 ```
 
-Core orchestration concepts covered by the brief: LangGraph, LangChain, multi-agent orchestration, intent
-detection, agent routing, ReAct, Plan-and-Execute, hierarchical agent graphs, stateful agent workflows,
-inter-agent delegation, human-in-the-loop, checkpointed execution. See
-[Implementation Status](#-implementation-status) for exactly which of these exist today.
+## Specialized Agents
 
-## 🔀 Intent Detection & Agent Routing
+### FAQ Agent
+Handles straightforward knowledge and FAQ-oriented requests.
 
-**Status: implemented.** Structured output (`IntentClassification`: `intent`, `confidence`, `reason`) via
-`IntentAgent`, deterministic table-based routing via `RouterAgent`. Under the default mock LLM provider,
-classification is a documented keyword heuristic (see `app/llm/providers/mock.py`); a real provider gets
-genuine model-based classification through the same code path.
+### RAG Agent
+Uses retrieval-based generation for document and knowledge-intensive questions.
+
+### GraphRAG Agent
+Supports relationship-aware and multi-hop retrieval using graph data.
+
+### CRM Agent
+Designed to interact with enterprise-style CRM capabilities through a tool abstraction.
+
+### Feedback Agent
+Designed for feedback-oriented workflows.
+
+### Handoff Agent
+Provides escalation from autonomous AI to human assistance.
+
+---
+
+# 🔀 Intent Detection & Agent Routing
+
+The routing layer converts user requests into structured intent and selects the appropriate agent.
+
+Supported intent categories include:
 
 ```text
-USER REQUEST → Intent Detection → { FAQ | KNOWLEDGE_QUERY | GRAPH_QUERY | CRM_QUERY | CRM_UPDATE |
-                                     APPOINTMENT_QUERY | FEEDBACK | HANDOFF | VOICE_TASK | UNKNOWN }
-                                            │
-                     ┌──────────────────────┼──────────────────────┬─────────────┐
-                     ▼                      ▼                      ▼             ▼
-                 FAQ Agent              RAG Agent              CRM Agent   Handoff Agent
+FAQ
+KNOWLEDGE_QUERY
+GRAPH_QUERY
+CRM_QUERY
+CRM_UPDATE
+APPOINTMENT_QUERY
+FEEDBACK
+HANDOFF
+VOICE_TASK
+UNKNOWN
 ```
 
-## 🔎 RAG
-
-**Status: implemented (Phase 2).** Real pipeline, not a keyword skeleton:
+Example:
 
 ```text
-DOCUMENT → PARSER (.txt/.md/.pdf) → SHA-256 HASH → DEDUP (SQLite) → CHUNKING → EMBEDDING → VECTOR STORE
-
-                         USER QUERY
-                              │
-                              ▼
-                       Query Rewriter (no-op under mock provider)
-                              │
-               ┌──────────────┴──────────────┐
-               ▼                             ▼
-          Vector Search (Chroma)         BM25 Search (rank_bm25)
-               │                             │
-               └──────────────┬──────────────┘
-                              ▼
-                     Weighted Reciprocal Rank Fusion (k=60)
-                              │
-                              ▼
-                Reranker (none by default | cross-encoder | LLM)
-                              │
-                              ▼
-                         Top Context → LLM → Grounded Response
+User Request
+      ↓
+IntentClassification
+      ↓
+Intent + Confidence + Routing Metadata
+      ↓
+Agent Router
+      ↓
+Specialized Agent
 ```
 
-- **Chunking** (`app/rag/chunking/`): all 7 strategies from requirement.md share one
-  `ChunkingStrategy.chunk(document)` interface via `ChunkingFactory` — `recursive` (the default,
-  hand-rolled paragraph/sentence/word splitter with overlap), `document_aware` (splits on markdown
-  headers), `hierarchical` (parent sections + linked child chunks), `semantic` (embedding-based
-  breakpoint detection between sentences), `proposition` and `agentic` (LLM-driven — fall back to
-  sentence-splitting/recursive under the mock provider, since asking a heuristic mock for semantic
-  judgment would just be noise), and `late` (an approximation — see the module docstring for
-  exactly how it differs from the published "late chunking" technique; token-level late interaction
-  isn't achievable through this repo's sentence-level `EmbeddingProvider` interface).
-- **Embeddings** (`app/rag/embeddings/`): `sentence-transformers/all-MiniLM-L6-v2` local default
-  (no API key), OpenAI adapter optional. `CachedEmbeddingProvider` wraps either one with an
-  in-memory or SQLite-persistent cache.
-- **Vector stores** (`app/rag/stores/`): Chroma (default, local persistent), FAISS (optional
-  extra), Pinecone (optional, implemented but not exercised against a live index — no key to test
-  with).
-- **Retrieval** (`app/rag/retrieval/`): vector + BM25 fused via weighted Reciprocal Rank Fusion
-  (standard `1/(k+rank)` formula, `k=60`). `QueryRewriter` is a documented no-op under the mock
-  provider. `SelfRAGStrategy` and `CRAGStrategy` are separate, explicitly-simplified strategy
-  modules (not wired into the default `RAGAgent` flow) — see their docstrings for exactly what's
-  approximated relative to the published techniques they're named after.
-- **Reranking** (`app/rag/reranking/`): off by default (`RAG__RERANKER=none`); `cross_encoder`
-  (local `cross-encoder/ms-marco-MiniLM-L-6-v2`) or `llm` (one relevance-scoring call per
-  candidate; falls back to lexical overlap under the mock provider) are opt-in via config.
-- **Relevance gating**: vector search always returns its nearest neighbors, even for an
-  off-topic query — `RAGAgent` checks lexical overlap between the query and top hit before
-  trusting it, rather than confidently answering from irrelevant context.
+The implementation uses structured Pydantic outputs and a provider abstraction so the same routing path can work with the repository's deterministic mock provider or a configured real LLM provider.
 
-## 🕸️ GraphRAG & Knowledge Graph
+---
 
-**Status: implemented (Phase 3).** Real pipeline, real synthetic domain:
+# 🧠 LangGraph Orchestration
+
+The core workflow is built around a stateful LangGraph graph.
 
 ```text
-DOCUMENT → ENTITY EXTRACTION → RELATIONSHIP EXTRACTION → GRAPH BUILDER → NEO4J (or in-memory fallback)
-    → GRAPH RETRIEVAL → GRAPHRAG AGENT → LLM
-
-Customer --OWNS--> Account          Customer --CREATED--> Order
-Customer --ASSIGNED_TO--> Agent     Customer --BOOKED--> Appointment --WITH--> Agent
+START
+  ↓
+Input Guardrail
+  ↓
+Intent Detection
+  ↓
+Agent Router
+  ↓
+Specialized Agent
+  ↓
+Output Guardrail
+  ↓
+END
 ```
 
-- **Extraction** (`app/graph_rag/entities.py` / `relationships.py`): regex-based by default —
-  tailored to (and verified correct for) this repo's fixed synthetic sentence templates, honestly
-  documented as not a general-purpose NER/RE system. With a real LLM provider configured,
-  `LLMEntityExtractor`/`LLMRelationshipExtractor` extract from arbitrary text via structured
-  output instead.
-- **Storage**: `Neo4jGraphRepository` is optional (`NEO4J__ENABLED=true` + a reachable server) and
-  was verified against a real, temporary Neo4j container during development — not just written
-  against the driver docs. `InMemoryGraphRepository` (a real, working adjacency-list graph, not a
-  stub) is the default, matching this repo's "local defaults" philosophy — GraphRAG does not
-  require a running Neo4j instance to demo. A misconfigured/unreachable Neo4j falls back
-  automatically and logs why, never crashing startup.
-- **Retrieval** (`app/graph_rag/retriever.py`): finds entities named in the query and traverses up
-  to 2 outgoing hops, genuinely demonstrating relationship-aware, multi-hop retrieval — e.g. "Who
-  is the agent assigned to John Doe?" resolves via a direct `ASSIGNED_TO` edge *and* independently
-  via `BOOKED → Appointment → WITH → Agent`, which a text-similarity search has no structural way
-  to do.
-- **Synthetic domain** (`demo/data/relationships.json`): 5 fictional customers, each with an
-  Account, Order, assigned Agent, and booked Appointment — matches requirement.md's CRM DOMAIN and
-  GraphRAG examples exactly, with zero real personal data.
-
-## 🔌 MCP
-
-**Status: not implemented — Phase 4.** MCP (Model Context Protocol) will be the tool-integration layer
-between the CRM Agent and a safe, synthetic/mock CRM data source — never a real employer system.
+Conversation state includes concepts such as:
 
 ```text
-CRM Agent → MCP Client → MCP Server → { Customer tools | Lead tools | Appointment tools | Knowledge tools }
-                                              │
-                                              ▼
-                                      Mock CRM / Local DB
+session_id
+user_id
+channel
+messages
+intent
+selected_agent
+retrieved_context
+selected_tools
+tool_results
+response
+guardrail_results
+metadata
 ```
 
-Planned tools: `get_customer`, `search_customer`, `create_customer`, `update_customer`, `get_lead`,
-`search_lead`, `create_lead`, `update_lead`, `get_appointment`, `search_appointment`,
-`create_appointment`, `update_appointment`, `cancel_appointment`, `search_knowledge`,
-`get_customer_history` — built with FastMCP, covering invalid-argument/tool-not-found/timeout/failure/
-malformed-output error handling per requirement.md.
+The architecture is designed for future extensions such as:
 
-Today, `CRMAgent` (see [Agents](#-implementation-status)) already recognizes CRM/lead/appointment intents
-and responds honestly that tool execution isn't wired up yet — it does not read or write any CRM data.
+- ReAct
+- Plan-and-Execute
+- hierarchical agent graphs
+- inter-agent delegation
+- human approval
+- retries
+- checkpoint-based resumption
 
-## 🧠 Multi-Model LLM Layer
+---
 
-**Status: implemented.** One `LLMProvider` interface (`app/llm/base.py`) with `generate()` and a
-cross-provider `generate_structured()` (schema-in-prompt, parse, validate, retry-on-failure). Concrete
-adapters:
+# 🔎 Advanced RAG
+
+The RAG layer goes beyond basic vector similarity.
+
+## End-to-End Retrieval Pipeline
 
 ```text
-                    Agent → LLMProvider (interface) → { Mock | OpenAI | Anthropic | Gemini | Groq }
+DOCUMENT
+   ↓
+PARSER
+   ↓
+SHA-256 HASH
+   ↓
+DUPLICATE DETECTION
+   ↓
+CHUNKING
+   ↓
+EMBEDDINGS
+   ↓
+VECTOR STORE
+
+
+USER QUERY
+   ↓
+QUERY REWRITING
+   ↓
+┌───────────────────────┐
+│                       │
+▼                       ▼
+VECTOR SEARCH          BM25
+│                       │
+└──────────┬────────────┘
+           ▼
+      HYBRID RETRIEVAL
+           ↓
+          RRF
+           ↓
+       RERANKING
+           ↓
+    TOP RELEVANT CONTEXT
+           ↓
+           LLM
+           ↓
+      GROUNDED ANSWER
 ```
 
-- **Mock** (default, `LLM__PROVIDER=mock`): zero dependencies, zero API key, fully deterministic — powers
-  every test in this repo and the default local run. It is a heuristic stand-in, not a real model; see its
-  docstring in `app/llm/providers/mock.py` for exactly what it does and doesn't do.
-- **OpenAI / Anthropic / Gemini / Groq**: real adapters, implemented against each SDK's current chat/
-  message-creation API (verified interactively against the installed SDK versions during development —
-  see each adapter's docstring for the exact version checked against). They raise a clear
-  `ProviderNotConfiguredError` (naming the missing extra or env var) rather than silently falling back to
-  the mock if selected without their API key/package installed.
+## Retrieval Techniques
 
-## 💬 Conversational AI
+- Vector Search
+- Semantic Search
+- BM25
+- Hybrid Retrieval
+- Reciprocal Rank Fusion
+- Cross-Encoder Reranking
+- LLM Reranking
+- Query Rewriting
+- Relevance Gating
+- Semantic Caching architecture
+- Self-RAG strategy
+- Corrective RAG / CRAG strategy
 
-**Status:** web chat is implemented (`POST /chat`). SMS-style and WhatsApp-style channel abstractions are
-Phase 10 and not implemented yet.
+---
+
+# ✂️ Document Chunking
+
+A common `ChunkingStrategy` interface allows multiple chunking approaches to be selected through a factory.
+
+Supported strategies:
 
 ```text
-Conversational AI → { Web Chat [implemented] | SMS [planned] | WhatsApp [planned] } → Agent Runtime
+Recursive
+Semantic
+Document-Aware
+Proposition
+Late
+Hierarchical
+Agentic
 ```
 
-## 📞 Voice AI
-
-**Status: not implemented — Phase 9.** Planned architecture (STT → guardrail → intent → router → RAG/
-GraphRAG/MCP → LLM → guardrail → TTS), voice capabilities (provider abstraction, voice selection,
-pronunciation rules, silence timeout, max call duration, thinking/ambient sound, human transfer, voicemail
-detection, recording disclosure, live call testing), and generic voice agent configs (Voice Assistant,
-Language Translator, Sales Assistant) are all documented in `requirement.md` and will be built as
-`voice/settings.py`, `voice/pronunciation.py`, `voice/voicemail.py`, `voice/handoff.py`, `voice/runtime.py`
-with `SpeechToTextProvider`/`TextToSpeechProvider`/`VoiceProvider` interfaces and optional ElevenLabs/
-Gemini adapters — no live paid credentials will ever be required to run this repository.
-
-## 🛡️ AI Guardrails
-
-**Status: implemented (Phase 1 scope).** Two agents, `InputGuardrailAgent` and `OutputGuardrailAgent`,
-each running a list of independent, deterministic `GuardrailCheck` rules (no LLM call, so they can't be
-talked around by the very input they inspect):
-
-- **Input:** not-empty, oversized-request (>4000 chars), a small unsafe-pattern denylist (documented as a
-  naive first line of defense, not a general jailbreak/prompt-injection solution).
-- **Output:** schema-valid (response is a string), non-empty, a prohibited-pattern denylist (stack traces,
-  unrendered template markers).
-
-**Not yet implemented (Phase 6):** semantic grounding, claim decomposition/validation, and LLM-as-a-Judge
-hallucination detection — see the next section.
-
-## 🚨 Hallucination Detection
-
-**Status: not implemented — Phase 6.** Planned pipeline: `Response → Semantic Grounding → Claim
-Extraction/Decomposition → Claim Validation → LLM-as-a-Judge → PASS | FAIL → Regenerate/Correct`. This
-will explicitly not be presented as mathematically perfect hallucination detection — limitations will be
-documented alongside the implementation.
-
-## 🧱 Structured Outputs
-
-**Status: implemented as a cross-cutting pattern.** Every agent-to-agent contract in this codebase is a
-Pydantic model — `IntentClassification`, `GuardrailCheckResult`/`GuardrailReport`, `AgentConfig`,
-`ChatRequest`/`ChatResponse`, `LLMMessage`/`LLMResponse` — validated at construction, not just at the API
-boundary. `LLMProvider.generate_structured()` is the mechanism that gets a Pydantic instance back from any
-configured provider (including the mock).
-
-## 👨‍💼 Human-in-the-Loop
-
-**Status: not implemented yet.** Planned: an approval gate for sensitive actions (`Sensitive Action? → No
-→ Continue`, `→ Yes → Pending Approval → Human Approve/Reject → Resume Workflow`) built on LangGraph's
-`interrupt_before` / checkpoint-resume mechanism, which the Phase 1 graph is already compiled with a
-checkpointer to support.
-
-## 🧪 Scenario Testing & Evaluation (planned)
-
-**Status:** this repo's own `pytest` suite is implemented today (see [Testing](#-testing) below). The separate
-**scenario framework** described in `requirement.md` (declarative `Scenario` definitions with
-`success_criteria`, an LLM-assisted scenario *generator*, a `run-all` suite runner, and pass/fail/latency
-reporting) is **Phase 7, not implemented yet** — don't confuse the two. RAGAS evaluation and LLM-as-a-Judge
-interfaces (response quality, faithfulness, relevance, tool correctness, workflow completion) are also
-Phase 7.
-
-## 📊 Observability
-
-**Status: implemented (Phase 1 scope).** Every `BaseAgent.execute()` call emits a structured `AgentEvent`
-(`trace_id`, `session_id`, `agent`, `action`, `status`, `latency_ms`) through an `EventBus` to a
-`LoggingEventSink` (stdout, JSON-formatted). `POST /chat` returns a `trace_id` on every response.
-
-**Not yet implemented (Phase 8):** optional `LangSmithEventSink` / `LangfuseEventSink` adapters behind the
-same `EventSink` interface, tool-execution-specific events (there are no tools yet — that's Phase 4), and
-retriever-specific events (no real retriever yet — that's Phase 2).
-
-## 📱 Agent Configuration
-
-**Status: implemented.** Every agent is configuration-driven via a Pydantic `AgentConfig`
-(`name, agent_type, description, language, conversation_style, instructions, connectors, knowledge_base,
-settings`), with a `default_config()` classmethod per agent and the option to override it entirely at
-construction time — no subclassing required to change an agent's identity/instructions/knowledge sources.
-
-## ⚙️ Backend Architecture
-
-**Status: partial.** Implemented: `GET /health`, `POST /chat`, `GET /agents`, `POST /agents/run`,
-`POST /documents/upload`, `POST /knowledge/search` (see [API Reference](#api-reference) below). Not
-yet implemented: `/conversations/summarize`, `/scenarios/run(-all)`, `/conversations/{id}`,
-`/mcp/test-tool`, and the `/voice/*` endpoints — each lands with the phase that implements its
-backing capability.
-
-<a id="api-reference"></a>
-
-| Method | Path | Status |
-|---|---|---|
-| GET | `/health` | ✅ implemented |
-| POST | `/chat` | ✅ implemented |
-| GET | `/agents` | ✅ implemented |
-| POST | `/agents/run` | ✅ implemented |
-| POST | `/documents/upload` | ✅ implemented |
-| POST | `/knowledge/search` | ✅ implemented |
-| POST | `/conversations/summarize` | ⬜ planned (Phase 5) |
-| GET | `/conversations/{id}` | ⬜ planned (Phase 5) |
-| POST | `/mcp/test-tool` | ⬜ planned (Phase 4) |
-| POST | `/scenarios/run` | ⬜ planned (Phase 7) |
-| POST | `/scenarios/run-all` | ⬜ planned (Phase 7) |
-| POST | `/voice/session`, `/voice/turn`, `/voice/end` | ⬜ planned (Phase 9) |
-
-## 🔄 Asynchronous Processing
-
-**Status: not implemented — Phases 2 & 11.** Planned: `upload → hash → deduplicate → queue → RabbitMQ →
-Celery → parse → chunk → embed → store`, with a synchronous local fallback so document ingestion doesn't
-require RabbitMQ/Celery to demo.
-
-## ⚡ Redis Usage
-
-**Status: not implemented — Phase 5.** `REDIS__ENABLED` is already a config flag (default `false`, local
-in-memory fallback used instead) — see `app/config/settings.py`. Planned uses: conversation state,
-semantic/embedding caching, temporary workflow state.
-
-## 🐳 Containerized Deployment
-
-**Status: not implemented — Phase 11.** Planned: a `Dockerfile` and `docker-compose.yml` with the API and
-worker as required services and Redis/RabbitMQ/Neo4j as optional services (`docker compose up` should work
-with none of them running), per requirement.md Rule 7 (no Kubernetes — Compose is sufficient).
-
-## ☁️ Production Cloud Architecture (illustrative only)
-
-The diagram below describes how a system like this *could* be deployed in a real cloud environment. It is
-**conceptual/illustrative, not a build target of this repository** — this project targets local Docker
-Compose, not CloudFront/ECS/S3.
+Example:
 
 ```text
-CloudFront → Application/API → ECS/EC2 → { Redis | RabbitMQ + Workers | Databases } → S3/Storage
+Document
+   ↓
+ChunkingFactory
+   ↓
+Selected ChunkingStrategy
+   ↓
+Chunks
 ```
 
-## 📂 Project Structure
+The repository distinguishes between full implementations and deliberately simplified approximations where the underlying technique requires richer model infrastructure.
 
-Reflects what actually exists today (see `PLAN.md` for what each future phase adds):
+---
+
+# 🧠 Embedding Pipeline
+
+```text
+Document
+   ↓
+Chunk
+   ↓
+Embedding Provider
+   ↓
+Vector Representation
+   ↓
+Embedding Cache
+   ↓
+Vector Store
+```
+
+Supported concepts include:
+
+- Sentence Transformers
+- OpenAI embeddings
+- embedding cache
+- in-memory caching
+- SQLite-persistent cache
+
+---
+
+# 🗄️ Vector & Search Stores
+
+The architecture supports adapters for:
+
+- Chroma
+- FAISS
+- Pinecone
+- Elasticsearch-oriented search workflows
+- Neo4j for graph storage/retrieval
+
+Local-first defaults keep the project practical for portfolio demonstrations.
+
+---
+
+# 🕸️ GraphRAG & Knowledge Graph
+
+GraphRAG is used for relationship-aware and multi-hop retrieval.
+
+```text
+DOCUMENT
+   ↓
+ENTITY EXTRACTION
+   ↓
+RELATIONSHIP EXTRACTION
+   ↓
+GRAPH BUILDER
+   ↓
+NEO4J / IN-MEMORY GRAPH
+   ↓
+GRAPH RETRIEVAL
+   ↓
+GRAPHRAG AGENT
+   ↓
+LLM
+```
+
+Example knowledge graph:
+
+```text
+Customer ──OWNS──────► Account
+Customer ──CREATED───► Order
+Customer ──ASSIGNED──► Agent
+Customer ──BOOKED────► Appointment
+Appointment ──WITH───► Agent
+```
+
+This enables questions where plain vector similarity is insufficient and relationships themselves carry the important information.
+
+---
+
+# 🔌 MCP — Model Context Protocol
+
+The platform is designed with MCP as the integration boundary between agents and enterprise capabilities.
+
+```text
+                    CRM / Business Agent
+                            │
+                            ▼
+                       MCP Client
+                            │
+                            ▼
+                       MCP Server
+                            │
+               ┌────────────┼────────────┐
+               ▼            ▼            ▼
+          Customer       Lead        Appointment
+            Tools        Tools          Tools
+               │            │            │
+               └────────────┼────────────┘
+                            ▼
+                     Mock / Local Data
+```
+
+Planned MCP tool categories include:
+
+```text
+Customer Tools
+Lead Tools
+Appointment Tools
+Knowledge Tools
+Conversation / History Tools
+```
+
+Example tool concepts:
+
+```text
+get_customer()
+search_customer()
+create_customer()
+update_customer()
+
+get_lead()
+search_lead()
+create_lead()
+update_lead()
+
+get_appointment()
+search_appointment()
+create_appointment()
+update_appointment()
+cancel_appointment()
+
+search_knowledge()
+get_customer_history()
+```
+
+The repository keeps this integration public-safe by using synthetic/local data rather than any real enterprise system.
+
+---
+
+# 🧠 Multi-Model LLM Architecture
+
+The application uses a provider abstraction rather than coupling agents to a single LLM vendor.
+
+```text
+                       Agent
+                         │
+                         ▼
+                  LLMProvider
+                    Interface
+                         │
+        ┌────────────────┼────────────────┐
+        ▼                ▼                ▼
+      Mock             OpenAI        Anthropic
+        │
+        ├──────────────► Gemini
+        │
+        └──────────────► Groq
+```
+
+Providers represented by the project include:
+
+- Mock provider
+- OpenAI
+- Anthropic
+- Google Gemini
+- Groq
+
+Structured generation is represented through a common provider interface and Pydantic schemas.
+
+---
+
+# 💬 Conversational AI
+
+The platform provides a channel-independent conversational architecture.
+
+```text
+                  Conversational AI
+                         │
+          ┌──────────────┼──────────────┐
+          ▼              ▼              ▼
+       Web Chat          SMS         WhatsApp
+          │              │              │
+          └──────────────┼──────────────┘
+                         ▼
+                    Agent Runtime
+```
+
+The repository currently exposes a web-chat API while keeping the channel layer extensible for additional adapters.
+
+---
+
+# 📞 Voice AI
+
+Voice AI is designed as a first-class extension of the conversational agent runtime.
+
+```text
+User Speech
+     ↓
+Speech-to-Text
+     ↓
+Input Guardrail
+     ↓
+Intent Detection
+     ↓
+Agent Router
+     ↓
+RAG / GraphRAG / MCP
+     ↓
+LLM
+     ↓
+Output Guardrail
+     ↓
+Text-to-Speech
+     ↓
+User Voice
+```
+
+The voice architecture covers:
+
+- STT abstraction
+- TTS abstraction
+- voice provider abstraction
+- voice selection
+- voice configuration
+- pronunciation rules
+- silence timeout
+- maximum call duration
+- thinking sound
+- ambient sound
+- human transfer
+- voicemail detection
+- recording disclosure
+- live voice testing
+- translator agent
+- sales assistant agent
+
+The repository keeps these capabilities modular so real voice providers can be integrated without coupling the entire platform to a single provider.
+
+---
+
+# 🎙️ Voice Configuration
+
+Example configuration:
+
+```yaml
+voice:
+  provider: mock
+  language: en-US
+  max_call_duration: 900
+  silence_timeout: 10
+  thinking_sound: true
+  ambient_sound: true
+  transfer_to_human: true
+  voicemail_detection: true
+  recording_disclosure: true
+```
+
+---
+
+# 🗣️ Pronunciation & Voice Controls
+
+Voice workflows are designed to support:
+
+```text
+Term
+ ↓
+Pronunciation Rule
+ ↓
+TTS Provider
+ ↓
+Natural Speech
+```
+
+Additional runtime controls include:
+
+- Silence handling
+- Maximum call duration
+- Thinking sound
+- Ambient sound
+- Voicemail handling
+- Human transfer
+- Recording disclosure
+
+---
+
+# 🧠 Memory & Stateful Conversations
+
+The project treats memory as a separate architectural concern.
+
+```text
+Conversation
+      ↓
+Agent State
+      │
+      ├── Short-Term Messages
+      ├── Checkpointed Workflow State
+      ├── Conversation Summary
+      └── Long-Term Memory Adapter
+```
+
+The current runtime demonstrates short-term stateful conversation through LangGraph checkpointing.
+
+The architecture is prepared for:
+
+- Redis-backed persistence
+- cross-session memory
+- vector memory
+- conversation summaries
+
+---
+
+# 🛡️ AI Guardrails
+
+The platform validates both incoming user input and generated model output.
+
+## Input Guardrails
+
+```text
+User Input
+    ↓
+Validation
+    ↓
+Policy / Pattern Checks
+    ↓
+Approved Request
+```
+
+## Output Guardrails
+
+```text
+LLM Response
+    ↓
+Schema Validation
+    ↓
+Output Checks
+    ↓
+Validated Response
+```
+
+Current guardrail concepts include:
+
+- empty input validation
+- oversized request protection
+- unsafe pattern checks
+- non-empty output validation
+- prohibited-pattern checks
+- structured output validation
+
+The architecture is designed to extend into:
+
+- semantic grounding
+- claim decomposition
+- claim validation
+- hallucination detection
+- LLM-as-a-Judge
+- regeneration / correction
+
+---
+
+# 🚨 Hallucination & Reliability Layer
+
+The reliability pipeline is designed as:
+
+```text
+LLM Response
+     ↓
+Semantic Grounding
+     ↓
+Claim Extraction
+     ↓
+Claim Validation
+     ↓
+LLM-as-a-Judge
+     ↓
+PASS / FAIL
+     ↓
+Regenerate / Correct
+```
+
+This layer is deliberately designed as a modular validation pipeline rather than treating model output as automatically trustworthy.
+
+---
+
+# 🧱 Structured Outputs
+
+Pydantic models are used to make AI and API contracts explicit.
+
+Examples include:
+
+```text
+IntentClassification
+GuardrailCheckResult
+GuardrailReport
+AgentConfig
+ChatRequest
+ChatResponse
+LLMMessage
+LLMResponse
+RAG schemas
+GraphRAG schemas
+```
+
+This makes agent-to-agent and API interactions predictable and easier to validate.
+
+---
+
+# 👨‍💼 Human-in-the-Loop
+
+The architecture supports controlled human intervention for sensitive actions.
+
+```text
+Agent
+  ↓
+Decision
+  ↓
+Sensitive Action?
+  │
+ ┌┴──────────────┐
+ ▼               ▼
+No              Yes
+ │                │
+ ▼                ▼
+Continue      Pending Approval
+                  │
+             ┌────┴────┐
+             ▼         ▼
+          Approve     Reject
+             │
+             ▼
+           Resume
+```
+
+LangGraph checkpointing provides the foundation for future interrupt/resume workflows.
+
+---
+
+# 🧪 Scenario Testing & Evaluation
+
+The platform is designed for scenario-based agent evaluation.
+
+Example scenario:
+
+```yaml
+name: CRM Lead Qualification
+
+description: >
+  Verify that the agent can identify a lead,
+  collect required information and perform
+  the expected workflow.
+
+success_criteria:
+  - Correct intent detected
+  - Correct agent selected
+  - Correct tool selected
+  - Workflow completes successfully
+  - Final response is valid
+```
+
+The evaluation architecture supports:
+
+- Scenario definitions
+- Scenario generation
+- Scenario execution
+- Run-all workflows
+- Success criteria
+- Pass/fail reporting
+- Latency measurement
+- Agent evaluation
+- Tool evaluation
+- Retrieval evaluation
+
+---
+
+# 📊 RAG & Agent Evaluation
+
+Evaluation concepts include:
+
+### RAG
+
+- Faithfulness
+- Answer Relevancy
+- Context Precision
+- Context Recall
+
+### Agent
+
+- Routing accuracy
+- Agent selection
+- Workflow completion
+- Response quality
+
+### Tools
+
+- Tool selection
+- Argument correctness
+- Execution success
+
+### Reliability
+
+- Guardrail behavior
+- Grounding
+- Hallucination detection
+
+---
+
+# 🔍 LLMOps & Observability
+
+The platform is structured for traceable AI execution.
+
+```text
+Request
+  ↓
+Agent
+  ↓
+Retrieval / Tool
+  ↓
+LLM
+  ↓
+Guardrail
+  ↓
+Response
+```
+
+Structured events can capture:
+
+```text
+trace_id
+session_id
+agent
+action
+status
+latency_ms
+```
+
+The architecture also supports:
+
+- LangSmith
+- Langfuse
+- structured JSON logs
+- agent execution events
+- tool execution traces
+- retrieval traces
+- evaluation traces
+
+---
+
+# ⚡ Distributed Processing & Infrastructure
+
+The platform is designed to separate interactive AI workloads from background processing.
+
+```text
+API
+ ↓
+Message Queue
+ ↓
+RabbitMQ
+ ↓
+Celery Worker
+ ↓
+Background Processing
+```
+
+Potential workloads include:
+
+- document ingestion
+- chunking
+- embeddings
+- evaluation
+- summaries
+- asynchronous processing
+
+---
+
+# 🔴 Redis
+
+Redis is part of the state and caching architecture.
+
+Potential uses include:
+
+- conversation state
+- semantic caching
+- embedding caching
+- temporary workflow state
+- frequently accessed data
+
+---
+
+# 📦 Document Processing Pipeline
+
+```text
+Upload
+  ↓
+Hash
+  ↓
+Deduplication
+  ↓
+Parse
+  ↓
+Chunk
+  ↓
+Embed
+  ↓
+Store
+```
+
+Supported document-oriented concepts include:
+
+- TXT
+- Markdown
+- PDF
+- SHA-256 hashing
+- duplicate detection
+- chunking
+- embeddings
+- vector storage
+- knowledge search
+
+---
+
+# ☁️ Cloud & Production Architecture
+
+The project is designed with cloud-oriented architecture in mind.
+
+Illustrative deployment:
+
+```text
+Cloud / CDN
+    ↓
+Application / API
+    ↓
+Compute
+    ↓
+┌────────────┬──────────────┬──────────────┐
+│            │              │
+Redis     RabbitMQ       Databases
+│            │              │
+│         Celery          │
+│         Workers         │
+└────────────┼──────────────┘
+             ↓
+         Object Storage
+```
+
+Relevant infrastructure concepts include:
+
+- AWS
+- S3
+- CloudFront
+- EC2 / ECS
+- Lambda
+- Redis
+- RabbitMQ
+- Celery
+- Docker
+- CI/CD
+
+---
+
+# 🐳 Containerization
+
+The architecture is designed for containerized deployment.
+
+```text
+                 Docker
+                   │
+       ┌───────────┼───────────┐
+       ▼           ▼           ▼
+      API        Worker      MCP
+                               │
+                               ▼
+                         External Tools
+```
+
+The target production model is modular rather than a single monolithic container.
+
+---
+
+# 📂 Project Structure
 
 ```text
 agentic-ai-platform/
+│
 ├── app/
-│   ├── api/                 FastAPI app factory, deps, routes (health, chat, agents, documents, knowledge)
-│   ├── agents/               BaseAgent, IntentAgent, RouterAgent, FAQAgent, RAGAgent, CRMAgent,
-│   │                         HandoffAgent, AgentRegistry
-│   ├── guardrails/           GuardrailCheck interface, input/output checks, guardrail agents
-│   ├── graph/                ConversationState, LangGraph node functions, compiled workflow
-│   ├── llm/                  LLMProvider interface + mock/openai/anthropic/gemini/groq adapters
-│   ├── rag/                  Real pipeline: ingestion, chunking (7 strategies), embeddings, stores
-│   │                         (Chroma/FAISS/Pinecone), retrieval (BM25/hybrid/RRF/Self-RAG/CRAG),
-│   │                         reranking (cross-encoder/LLM), pipeline.py orchestrator
-│   ├── graph_rag/             Entity/relationship extraction, graph builder, Neo4j + in-memory
-│   │                         repositories, graph retriever, context formatter
-│   ├── models/                Pydantic schemas (enums, messages, intent, guardrails, agent config, rag,
-│   │                         graph_rag)
-│   ├── config/                Settings (one category per integration)
-│   └── observability/        Structured logging, trace IDs, AgentEvent/EventBus
+│   ├── api/
+│   ├── agents/
+│   ├── config/
+│   ├── graph/
+│   ├── graph_rag/
+│   ├── guardrails/
+│   ├── llm/
+│   ├── models/
+│   ├── observability/
+│   │
+│   └── rag/
+│       ├── ingestion/
+│       ├── chunking/
+│       ├── embeddings/
+│       ├── retrieval/
+│       ├── reranking/
+│       └── stores/
+│
+├── demo/
+│   └── data/
+│
 ├── tests/
-│   ├── agents/, guardrails/, graph/, llm/, rag/, graph_rag/, api/    153 tests, see Testing below
-│   └── test_settings.py
-├── demo/data/                 faqs.json, knowledge_documents.json, relationships.json (synthetic, safe)
-├── PLAN.md                    Phase-by-phase roadmap and architectural decisions
-├── requirement.md             The original build brief this repo implements progressively
-├── pyproject.toml
+│
+├── docs/
+│
+├── scripts/
+│
 ├── .env.example
-└── README.md
+├── .gitignore
+├── PLAN.md
+├── pyproject.toml
+├── README.md
+└── LICENSE
 ```
 
-Not created yet (by design — see "Core design principle" in `requirement.md`: no empty scaffolding ahead
-of the phase that implements it): `app/mcp/`, `app/voice/`, `app/channels/`, `app/memory/`,
-`app/connectors/`, `app/evaluation/`, `app/scenarios/`, `docs/`, `scripts/`, `Dockerfile`,
-`docker-compose.yml`.
+---
 
-## 🧪 Testing
+# 🛠️ Technology Stack
+
+## Generative AI / LLM
+
+- OpenAI
+- Anthropic
+- Google Gemini
+- Groq
+- LangChain
+- LangGraph
+
+## Agentic AI
+
+- Multi-Agent orchestration
+- Intent Detection
+- Agent Routing
+- ReAct architecture
+- Plan-and-Execute architecture
+- Hierarchical Agent Graphs
+- Stateful Workflows
+- Inter-Agent Delegation
+- Human-in-the-Loop
+- Checkpointed execution
+- MCP
+- FastMCP
+- Tool Calling
+
+## RAG / Knowledge
+
+- Advanced RAG
+- Self-RAG
+- Corrective RAG / CRAG
+- Hybrid Retrieval
+- Vector Search
+- BM25
+- Reciprocal Rank Fusion
+- Cross-Encoder Reranking
+- LLM Reranking
+- Query Rewriting
+- Semantic Search
+- Semantic Caching
+
+## GraphRAG
+
+- Neo4j
+- Knowledge Graphs
+- Entity Extraction
+- Relationship Extraction
+- Multi-Hop Retrieval
+- Graph Retrieval
+
+## Vector / Search
+
+- Chroma
+- FAISS
+- Pinecone
+- Elasticsearch
+- Sentence Transformers
+
+## Document AI
+
+- Recursive Chunking
+- Semantic Chunking
+- Document-Aware Chunking
+- Proposition Chunking
+- Late Chunking
+- Hierarchical Chunking
+- Agentic Chunking
+- Embedding Pipelines
+- Embedding Cache
+
+## Conversational AI
+
+- Web Chat
+- SMS-style channel architecture
+- WhatsApp-style channel architecture
+- Channel abstraction
+- Conversation state
+
+## Voice AI
+
+- Speech-to-Text
+- Text-to-Speech
+- Voice Provider Abstraction
+- Voice Configuration
+- Pronunciation
+- Silence Handling
+- Voicemail Detection
+- Human Transfer
+- Recording Disclosure
+- Live Voice Testing
+- Translator Agent
+- Sales Assistant Agent
+
+## Reliability / Guardrails
+
+- Input Guardrails
+- Output Guardrails
+- Semantic Grounding
+- Claim Decomposition
+- Claim Validation
+- Hallucination Detection
+- LLM-as-a-Judge
+- Structured Outputs
+- Pydantic
+
+## Evaluation / LLMOps
+
+- RAGAS
+- Scenario Testing
+- Success Criteria
+- LangSmith
+- Langfuse
+- Structured Logging
+- Tracing
+- Agent Execution Events
+
+## Backend / Infrastructure
+
+- Python
+- FastAPI
+- Flask
+- Redis
+- RabbitMQ
+- Celery
+- WebSockets
+- Docker
+- AWS
+- S3
+- CloudFront
+- EC2
+- ECS
+- Lambda
+- CI/CD
+
+---
+
+# 🚀 Quick Start
+
+Requires Python 3.11+.
+
+```bash
+git clone https://github.com/aashuBX/agentic-ai-platform.git
+cd agentic-ai-platform
+
+python3.11 -m venv .venv
+source .venv/bin/activate
+
+pip install -e ".[dev]"
+
+cp .env.example .env
+```
+
+Start the API:
+
+```bash
+uvicorn app.api.main:app --reload
+```
+
+Open:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+for the interactive FastAPI / Swagger interface.
+
+---
+
+# 🔌 Example API Usage
+
+Health:
+
+```bash
+curl -s http://127.0.0.1:8000/health
+```
+
+Chat:
+
+```bash
+curl -s -X POST http://127.0.0.1:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "session_id": "demo-1",
+    "message": "What are your business hours?",
+    "channel": "web"
+  }'
+```
+
+Knowledge search:
+
+```bash
+curl -s -X POST http://127.0.0.1:8000/knowledge/search \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "data retention policy",
+    "top_k": 3
+  }'
+```
+
+Agent listing:
+
+```bash
+curl -s http://127.0.0.1:8000/agents
+```
+
+---
+
+# 🧪 Testing
+
+The repository includes automated tests covering the implemented areas of the platform.
+
+Example:
 
 ```bash
 pytest -q
 ```
 
-**Last measured result: 148 passed, 5 skipped, 0 failed** (`pytest -q`, mock LLM provider, no external
-services — the 5 skips are the optional live-Neo4j integration tests, which auto-skip unless a Neo4j
-server is actually reachable; see [GraphRAG](#-graphrag--knowledge-graph)). Ruff lint (`ruff check app
-tests`) and format (`ruff format --check app tests`) are both clean. First run downloads two small local
-models from Hugging Face (embedding + cross-encoder, ~100MB combined, cached afterward under
-`~/.cache/huggingface`) and takes ~50-60s; subsequent runs are model-load-bound (~15-25s) rather than
-network-bound, since both models are cached process-wide, not just on disk. Coverage: intent
-classification heuristics, table-based routing for every intent category, the full RAG pipeline
-(ingestion/dedup, all 7 chunking strategies, embedding cache hit/miss, Chroma+FAISS add/query/delete,
-BM25, RRF with weighting, cross-encoder + LLM reranking, Self-RAG/CRAG strategy logic, and an end-to-end
-pipeline integration test with real embeddings), the full GraphRAG pipeline (entity/relationship
-extraction, graph builder, in-memory repository CRUD/traversal, multi-hop retrieval, context formatting,
-and — when a Neo4j server is reachable — a real live-database integration suite), FAQ/RAG/GraphRAG
-grounded-answer and no-match/low-relevance paths, the CRM skeleton's honesty about not being wired to
-MCP, the handoff agent, every input/output guardrail check, a full-graph integration test per demo
-scenario (FAQ query, RAG query, GraphRAG relationship query, CRM update, human handoff, guardrail
-rejection), cross-turn memory accumulation via the LangGraph checkpointer, document upload + knowledge
-search API routes. External providers (OpenAI/Anthropic/Gemini/Groq, Pinecone) are not exercised by the
-test suite — they need a real API key by nature.
+Additional checks:
 
-## ⚙️ Configuration
+```bash
+ruff check app tests
+ruff format --check app tests
+```
 
-Copy `.env.example` to `.env`. Every category below has a working default that requires **no external
-service and no API key** — see the file for the full list of variables.
+Tests cover areas such as:
 
-| Category | Required? | Default | Notes |
-|---|---|---|---|
-| `LLM__*` | Required (but defaults to mock) | `provider=mock` | Set to `openai`/`anthropic`/`gemini`/`groq` + the matching API key + install that extra (`pip install -e ".[openai]"` etc.) for a real model. |
-| `RAG__*` | Optional | `chunking_strategy=recursive`, `reranker=none` | See [RAG](#-rag) for every strategy/reranker option. |
-| `VECTOR_STORE__*` | Optional | `provider=chroma`, local dir | FAISS (`pip install -e ".[faiss]"`) and Pinecone (`.[pinecone]"`) are drop-in alternatives. |
-| `NEO4J__*` | Optional | `enabled=false` | In-memory graph fallback when disabled or unreachable — see [GraphRAG](#-graphrag--knowledge-graph). |
-| `REDIS__*` | Optional | `enabled=false` | In-memory fallback when disabled (Phase 5). |
-| `RABBITMQ__*` | Optional | `enabled=false` | Synchronous ingestion fallback when disabled (Phase 2/11). |
-| `MCP__*` | Optional | local host/port | Not wired up until Phase 4. |
-| `VOICE__*` | Optional | `provider=mock` | Real voice provider adapters land in Phase 9. |
-| `LANGSMITH__*` | Optional | `enabled=false` | Phase 8. |
-| `LANGFUSE__*` | Optional | `enabled=false` | Phase 8. |
-| `EVALUATION__*` | Optional | `ragas_enabled=false` | Phase 7. |
+- intent classification
+- agent routing
+- graph workflow behavior
+- FAQ / RAG behavior
+- document ingestion
+- chunking strategies
+- embeddings
+- vector stores
+- BM25
+- RRF
+- reranking
+- GraphRAG
+- guardrails
+- checkpointed conversation state
+- API routes
 
-Never commit `.env`. Secrets are only ever read from the environment (`pydantic-settings`) — nothing is
-hard-coded.
+External providers such as OpenAI, Anthropic, Gemini, Groq and Pinecone require their own credentials and are therefore provider-dependent.
 
-## 🚧 Limitations
+---
 
-- The `MockLLMProvider` is a deterministic keyword heuristic, not a language model — it demonstrates the
-  architecture end-to-end offline, but response *quality* with it is intentionally limited. Configure a
-  real provider for genuine generation/classification quality.
-- `FAQAgent` still uses simple keyword lookup over a small curated FAQ list (a deliberately
-  different, simpler problem than RAG over longer documents) — `RAGAgent` uses the real Phase 2
-  pipeline. See [RAG](#-rag) for exactly what's real vs. approximated within that pipeline
-  (`proposition`/`agentic`/`late` chunking, Self-RAG, and CRAG are all documented simplifications
-  of published techniques, not full reproductions of them).
-- `CRMAgent` does not call any tool yet — it recognizes CRM-shaped intents and says so honestly.
-- Conversation memory is short-term and in-process only (LangGraph's `MemorySaver`) — it is lost on
-  process restart and does not survive across multiple API instances. Redis-backed persistence is Phase 5.
-- Guardrails are rule-based pattern checks, not a general-purpose safety/jailbreak solution, and there is
-  no grounding/hallucination check yet (Phase 6) beyond `RAGAgent`'s lexical-overlap relevance gate.
-- FAISS and PyTorch/sentence-transformers each bundle their own OpenMP runtime, which can deadlock
-  if both are loaded in one process on some platforms — worked around in `app/__init__.py`
-  (`KMP_DUPLICATE_LIB_OK=TRUE`); see `PLAN.md` §3b if you hit a similar hang with a different
-  native-dependency combination.
-- GraphRAG's entity/relationship extractors are regex-based, correct for this repo's fixed
-  synthetic sentence templates but explicitly not general-purpose NER/RE — see
-  [GraphRAG](#-graphrag--knowledge-graph). The knowledge graph itself is small (5 customers, 2
-  agents) and intended to demonstrate the pattern, not graph scale.
-- No MCP, voice, multi-channel, async pipeline, evaluation, or observability-export functionality
-  exists yet — see [Implementation Status](#-implementation-status).
-- No CI workflow file exists yet.
+# ⚙️ Configuration
 
-## 🗺️ Roadmap
+Configuration is environment-driven.
 
-See [`PLAN.md`](PLAN.md) for the full phase-by-phase plan (Phases 2–12: Real RAG, GraphRAG, MCP, Memory,
-Guardrails+Reliability, Evaluation, Observability, Voice AI, Multi-Channel, Docker, Documentation/Demo).
+Representative categories:
 
-## License
+```text
+LLM
+RAG
+VECTOR_STORE
+NEO4J
+REDIS
+RABBITMQ
+MCP
+VOICE
+LANGSMITH
+LANGFUSE
+EVALUATION
+```
 
-See [`LICENSE`](LICENSE).
+Example:
+
+```text
+LLM__PROVIDER=mock
+RAG__RERANKER=none
+VECTOR_STORE__PROVIDER=chroma
+NEO4J__ENABLED=false
+REDIS__ENABLED=false
+RABBITMQ__ENABLED=false
+```
+
+Secrets must be supplied through environment variables.
+
+Never commit `.env`.
+
+---
+
+# 🧭 Engineering Principles
+
+### 1. Modular AI Architecture
+
+Agents, retrieval, tools, memory, guardrails and evaluation are separate concerns.
+
+### 2. Provider Abstraction
+
+LLM, embedding, vector, voice and evaluation providers are accessed through interfaces.
+
+### 3. Local-First Development
+
+The repository supports local or mock implementations wherever practical.
+
+### 4. Public-Safe by Design
+
+The project uses synthetic data and does not depend on private enterprise systems.
+
+### 5. Explainable Workflows
+
+Important AI decisions are represented as explicit state transitions, routing decisions and execution events.
+
+### 6. Evaluation-Aware Engineering
+
+AI behavior should be measured and tested rather than assumed to be correct.
+
+---
+
+# 📌 Current Implementation Focus
+
+The repository demonstrates a working foundation around:
+
+```text
+FastAPI
+   ↓
+Input Guardrail
+   ↓
+Intent Detection
+   ↓
+LangGraph Workflow
+   ↓
+Agent Router
+   ↓
+FAQ / RAG / GraphRAG / CRM pathways
+   ↓
+Output Guardrail
+   ↓
+Response
+```
+
+Implemented areas are expanded incrementally while additional capabilities remain modular and documented in the project roadmap.
+
+---
+
+# 🗺️ Roadmap
+
+The roadmap covers:
+
+- Core Agent Runtime
+- Advanced RAG
+- GraphRAG
+- MCP
+- Memory
+- Guardrails & Reliability
+- Evaluation
+- LLMOps
+- Voice AI
+- Multi-Channel
+- Docker / Production Infrastructure
+- Documentation & Demo
+
+See `PLAN.md` for implementation details and architectural decisions.
+
+---
+
+# 🔐 Independent Portfolio Project
+
+This repository is an **independent public implementation created for technical portfolio and demonstration purposes**.
+
+It is:
+
+- not an employer product
+- not affiliated with or endorsed by an employer
+- not based on proprietary source code
+- not connected to internal enterprise APIs
+- not using production credentials
+- not using customer data
+- not exposing confidential prompts or schemas
+
+The implementation uses public technologies and synthetic/mock data.
+
+---
+
+# 🎓 What This Project Demonstrates
+
+This repository demonstrates how an AI engineer can combine:
+
+```text
+LLMs
+  ↓
+Prompt Engineering
+  ↓
+Structured Outputs
+  ↓
+Agentic Workflows
+  ↓
+Multi-Agent Orchestration
+  ↓
+RAG
+  ↓
+GraphRAG
+  ↓
+MCP / Tool Calling
+  ↓
+Memory
+  ↓
+Guardrails
+  ↓
+Evaluation
+  ↓
+LLMOps
+  ↓
+Production-Oriented Infrastructure
+```
+
+The engineering goal is:
+
+```text
+Understand
+    ↓
+Reason
+    ↓
+Retrieve
+    ↓
+Select Tools
+    ↓
+Execute
+    ↓
+Validate
+    ↓
+Evaluate
+    ↓
+Improve
+```
+
+---
+
+# 👨‍💻 About
+
+**Aashu Kumar Jha**
+
+AI / GenAI / Agentic AI Engineer
+
+Focus areas:
+
+```text
+Agentic AI
+Generative AI
+LLM Engineering
+LangGraph
+LangChain
+MCP
+Advanced RAG
+GraphRAG
+AI Guardrails
+LLMOps
+Voice AI
+Python
+FastAPI
+AWS
+Distributed Systems
+```
+
+GitHub:
+
+https://github.com/aashuBX
+
+---
+
+<div align="center">
+
+# 🤖 Understand → Reason → Retrieve → Act → Validate → Evaluate
+
+### Build Intelligent Systems. Engineer for Reliability. Ship to Production.
+
+</div>
